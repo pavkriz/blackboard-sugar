@@ -14,6 +14,63 @@ jQuery.noConflict();
 
 (function( $ ) {
   $(function() {
+      
+        var courseHooks = [];
+      
+        // TODO make course-specific (UHK.cz) hooks external
+        courseHooks.push({
+            forCourse : function(course_id, course_title) {
+                return (course_title.indexOf('DORDB') == 0);
+            },
+            provideSummaryValue: function(row, colByName) {
+                var sum = '';
+                if (row[colByName['Semestrální projekt'].id] >= 15) { // min 15 bodu z projektu
+                    sum += '<span style="color: #009933; font-size: 20px; font-weight: bold">☑</span>';
+                } else {
+                    sum += '<span style="color: #CC0000; font-size: 20px; font-weight: bold"><b>☐</b></span>';
+                }
+                if (row[colByName['Zápočtový test'].id] >= 11) { // min 11 bodu ze zap. testu
+                    sum += '<span style="color: #009933; font-size: 20px; font-weight: bold">☑</span>';
+                } else {
+                    sum += '<span style="color: #CC0000; font-size: 20px; font-weight: bold"><b>☐</b></span>';
+                }
+                // min 24 bodu ze zkousky (nutno projit vsechny sloupce zacinajici ZK
+                var zkOk = false;
+                $.each(colByName, function(col_name, col) {
+                    if (col_name.indexOf('ZK') == 0) {
+                        // nazev sloupce zacina na ZK
+                        // overit, zda hodnota ve sloupci neni zrusena
+                        if (!row[colByName[col_name].id+'__canceled']) {
+                        	var val = row[colByName[col_name].id];
+                        	if (val >= 24) {
+                            	zkOk = true;
+                        	}
+                        }
+                    }
+                });
+                if (zkOk) {
+                    sum += '<span style="color: #009933; font-size: 20px; font-weight: bold">☑</span>';
+                } else {
+                    sum += '<span style="color: #CC0000; font-size: 20px; font-weight: bold"><b>☐</b></span>';
+                }
+                var zk = '';
+                var total = row[colByName['Total'].id];
+                // vypocitat pripadne znamku ze zkousky
+                //Body v intervalu <90, 100> výborný
+			    //Body v intervalu <70, 89> velmi dobrý
+				//Body v intervalu <50, 69> dobrý
+				//Body v intervalu < 0, 49> nevyhovující 
+                if (total >= 90) {
+                    zk = 1;
+                } else if (total >= 70) {
+                    zk = 2;
+                } else if (total >= 50) {
+                    zk = 3;
+                }
+                sum += zk;
+                return sum;
+            }
+        });
 
       	var getURLParameter = function(name) {
           return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null
@@ -51,7 +108,7 @@ jQuery.noConflict();
             }                
         };
         
-        sugarShowNiceGradebook = function showNiceGradebook(course_id) {
+        sugarShowNiceGradebook = function showNiceGradebook(course_id, course_title) {
             $("<div id='sugar-overlay' style='padding: 10px;'>"
               + "<div><button type='button' id='sugar-close' style='cursor: pointer; background: 0 0; border: 0; font-size: 21px; font-weight: 700; line-height: 1; color: #000; text-shadow: 0 1px 0 #fff; filter: alpha(opacity=40); opacity: .4'>×</button></div>"
               + "<div id='sugar-loading'>Loading gradebook data...</div>"
@@ -75,8 +132,8 @@ jQuery.noConflict();
                         $('#sugar-loading').remove();
                                                 
                         // convert BB gradebook data to Handsontable (HOT)
-                        var colHeaders = [ 'Last action' ];
-                        var colDefs = [ {data: '_lastActionDateStr'} ];
+                        var colHeaders = [ 'Last action', 'Summary' ];
+                        var colDefs = [ {data: '_lastActionDateStr'}, {data: '_summary'} ];
                         var dynaColumns = colDefs.length;
                         var colByName = {};
                         $.each(result.colDefs, function(index, col) {
@@ -93,6 +150,10 @@ jQuery.noConflict();
                                         record[cell.c] = cell.tv;
                                     } else {
                                         record[cell.c] = cell.v;
+                                    }
+                                    if (cell.hasOwnProperty("x") && cell.x == 'y') {
+                                        // canceled value
+                                        record[cell.c+'__canceled'] = true;
                                     }
                                 }
                             });
@@ -181,8 +242,12 @@ jQuery.noConflict();
  							return (1 - ((value - min) / (max - min)));
 						}
                         
-                        var heatmapRenderer = function(instance, td, row, col, prop, value, cellProperties) {
-                            Handsontable.renderers.TextRenderer.apply(this, arguments);
+                        var cellRenderer = function(instance, td, row, col, prop, value, cellProperties) {
+                            if (prop == '_summary') {
+                                Handsontable.renderers.HtmlRenderer.apply(this, arguments);
+                            } else {
+                            	Handsontable.renderers.TextRenderer.apply(this, arguments);
+                            }
                             
                             if (instance.sortIndex &&  instance.sortIndex.length > 0) {
                             	row = instance.sortIndex[row][0];
@@ -196,7 +261,21 @@ jQuery.noConflict();
                             }
                             
                             td.style.color = 'black';
+                            
+                            if (data[row][prop+'__canceled']) {
+                                td.style['text-decoration'] = 'line-through';
+                            }
                         };
+                        
+                        // handle hooks
+                        $.each(courseHooks, function(index, hook) {
+                            if (hook.forCourse(course_id, course_title)) {
+                                $.each(data, function(index, row) {
+                                	row['_summary'] = hook.provideSummaryValue(row, colByName);
+                                });
+                            }
+                                
+                        });
                         
                         $('#sugar-table').handsontable({
                             data: data,
@@ -208,7 +287,7 @@ jQuery.noConflict();
                             cells: function (row, col, prop) {
                                     var cellProperties = {};
                                     cellProperties.readOnly = true;
-                                	cellProperties.renderer = heatmapRenderer;
+                                	cellProperties.renderer = cellRenderer;
                                 	//cellProperties.comment = 'test';  
                                     return cellProperties;
                                   }
@@ -229,13 +308,14 @@ jQuery.noConflict();
                 
         if (location.pathname == '/webapps/gradebook/do/instructor/enterGradeCenter') {
             var course_id = getURLParameter('course_id');
+            var course_title = courseTitle; // global variable
             console.log('SUGAR: grade center '+course_id);
             $('#nav').append('<li class="mainButton" style="position: relative;"><a id="sugar-show-nice" href="javascript:void(0)" style="background-color: #52A358;">UHK: Pretty table</a></li>');
             $('#sugar-show-nice').click(function(e) {
                 if ($('#sugar-overlay').length > 0) {
                     $('#sugar-overlay').remove();
                 }
-                sugarShowNiceGradebook(course_id);
+                sugarShowNiceGradebook(course_id, course_title);
                 e.preventDefault();
             });
         }
