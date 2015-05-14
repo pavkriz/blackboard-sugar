@@ -322,8 +322,8 @@ jQuery.noConflict();
     	
     	      
         // Handsontable (HOT)
-        addJs('http://handsontable.com/dist/jquery.handsontable.full.js');
-        addCss('http://handsontable.com/dist/jquery.handsontable.full.css');
+        addJs('http://handsontable.com//bower_components/handsontable/dist/handsontable.full.min.js');
+        addCss('http://handsontable.com//bower_components/handsontable/dist/handsontable.full.min.css');
         
         // Moment.js (date-time manipulation)
         addJs('//cdnjs.cloudflare.com/ajax/libs/moment.js/2.7.0/moment-with-langs.js');
