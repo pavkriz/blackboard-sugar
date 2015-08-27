@@ -284,6 +284,8 @@ jQuery.noConflict();
                             fixedColumnsLeft: result.numFrozenColumns+dynaColumns, // First name, Last name
                             columnSorting: true,
                             comments: true,
+                            colWidths: [50, 50],
+                            manualColumnResize: true,
                             cells: function (row, col, prop) {
                                     var cellProperties = {};
                                     cellProperties.readOnly = true;
