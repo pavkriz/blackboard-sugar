@@ -5,6 +5,7 @@
 // @description  Sweet custom user-script enhancements for BlackBoard Learn LMS's instructors. Developed for use at the University of Hradec Kralove.
 // @grant        none
 // @require		 https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js
+// @require      https:////handsontable.com/dist/handsontable.full.js
 // @include      http://oliva.uhk.cz/*
 // @include      https://oliva.uhk.cz/*
 // ==/UserScript==
@@ -277,7 +278,10 @@ jQuery.noConflict();
                                 
                         });
                         
-                        $('#sugar-table').handsontable({
+                        // don't create Handsontable via jQuery (actually $ is probably not jQuery in Blackboard, but Handsontable calls $ inside trying to integrate with jQuery)
+                        var htcontainer = document.getElementById('sugar-table');
+                        //$('#sugar-table').handsontable({
+                        var hot = new Handsontable(htcontainer, {
                             data: data,
                             columns: colDefs,
                             colHeaders: colHeaders,
@@ -324,8 +328,8 @@ jQuery.noConflict();
     	
     	      
         // Handsontable (HOT)
-        addJs('http://handsontable.com//bower_components/handsontable/dist/handsontable.full.min.js');
-        addCss('http://handsontable.com//bower_components/handsontable/dist/handsontable.full.min.css');
+        //addJs('//handsontable.com/dist/handsontable.full.js');
+        addCss('//handsontable.com/dist/handsontable.full.css');
         
         // Moment.js (date-time manipulation)
         addJs('//cdnjs.cloudflare.com/ajax/libs/moment.js/2.7.0/moment-with-langs.js');
