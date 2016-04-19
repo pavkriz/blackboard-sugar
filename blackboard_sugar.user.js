@@ -56,17 +56,24 @@ jQuery.noConflict();
                 }
                 var zk = '';
                 var total = row[colByName['Total'].id];
-                // vypocitat pripadne znamku ze zkousky
-                //Body v intervalu <90, 100> výborný
-			    //Body v intervalu <70, 89> velmi dobrý
-				//Body v intervalu <50, 69> dobrý
-				//Body v intervalu < 0, 49> nevyhovující 
+                // Body v intervalu <90, 100>  A
+                // Body v intervalu <80, 89>    B
+                // Body v intervalu <70, 79>   C
+                // Body v intervalu <60, 69>   D
+                // Bodz v intervalu <50, 59>   E
+                // Body v intervalu < 0, 49>    F 
                 if (total >= 90) {
-                    zk = 1;
+                    zk = 'A';
+                } else if (total >= 80) {
+                    zk = 'B';
                 } else if (total >= 70) {
-                    zk = 2;
+                    zk = 'C';
+                } else if (total >= 60) {
+                    zk = 'D';
                 } else if (total >= 50) {
-                    zk = 3;
+                    zk = 'E';
+                } else {
+                    zk = 'F';
                 }
                 sum += zk;
                 return sum;
