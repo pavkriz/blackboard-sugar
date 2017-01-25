@@ -30,7 +30,7 @@ jQuery.noConflict();
                 } else {
                     sum += '<span style="color: #CC0000; font-size: 20px; font-weight: bold"><b>☐</b></span>';
                 }
-                if (row[colByName['Zápočtový test'].id] >= 11 || row[colByName['Zápočtový test PF opravný'].id] >= 11) { // min 11 bodu ze zap. testu
+                if (row[colByName['Zápočtový test'].id] >= 11 || row[colByName['Zápočtový test PF opravný'].id] >= 11 || row[colByName['Zápocet_test2'].id] >= 11) { // min 11 bodu ze zap. testu
                     sum += '<span style="color: #009933; font-size: 20px; font-weight: bold">☑</span>';
                 } else {
                     sum += '<span style="color: #CC0000; font-size: 20px; font-weight: bold"><b>☐</b></span>';
